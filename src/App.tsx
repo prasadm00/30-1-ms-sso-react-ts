@@ -1,26 +1,51 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { MsalProvider, AuthenticatedTemplate, useMsal, UnauthenticatedTemplate } from '@azure/msal-react';
+import { Container, Button } from 'react-bootstrap';
+import { PageLayout } from './components/PageLayout';
+import { IdTokenData } from './components/DataDisplay';
+import { loginRequest } from './authConfig';
+import './styles/App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+
+const MainContent: React.FC = () => {
+    const { instance } = useMsal();
+    const activeAccount = instance.getActiveAccount();
+
+    const handleRedirect = () => {
+        instance
+            .loginRedirect({
+                ...loginRequest,
+                prompt: 'create',
+            })
+            .catch((error) => console.log(error));
+    };
+
+    return (
+        <div className="App">
+            <AuthenticatedTemplate>
+                {activeAccount ? (
+                    <Container>
+                        <IdTokenData idTokenClaims={activeAccount.idTokenClaims} />
+                    </Container>
+                ) : null}
+            </AuthenticatedTemplate>
+            <UnauthenticatedTemplate>
+                <Button className="signInButton" onClick={handleRedirect} variant="primary">
+                    Sign up
+                </Button>
+            </UnauthenticatedTemplate>
+        </div>
+    );
+};
+
+const App: React.FC<{ instance: any }> = ({ instance }) => {
+    return (
+        <MsalProvider instance={instance}>
+            <PageLayout>
+                <MainContent />
+            </PageLayout>
+        </MsalProvider>
+    );
+};
 
 export default App;
